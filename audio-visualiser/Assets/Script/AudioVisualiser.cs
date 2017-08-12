@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class AudioVisualiser : MonoBehaviour
 {
+    public GameObject visualObjectPrefab;       // The object used to represent the audio.
+    public Color lowDBColor;                    // The low dB color.
+    public Color highDBColor;                   // The high dB color.
+
     public float rmsRefValue = 0.1f;            // The RMS value for 0dB.
     public float rmsValue;                      // The audio's RMS (Root Mean Squared) value this frame.
     public float dbValue;                       // The audio's decibel value this frame.
@@ -13,6 +17,8 @@ public class AudioVisualiser : MonoBehaviour
     public float visualScaleModifer = 50.0f;    // The modifer for the scale of each visual object.
     public float smoothSpeed = 10.0f;           // How quickly the visual objects return to their default size.
     public float usablePercentage = 0.5f;       // The percentage of the visual object line that will be kept.
+
+    public float circleRadius = 5.0f;           // The radius of the circle of visual objects.
 
     private AudioSource audioSource;            // The audio source playing the music that will be visualised.
     private const int SampleSize = 1024;        // The sample size for the audio.
@@ -26,15 +32,18 @@ public class AudioVisualiser : MonoBehaviour
     /* Use this for initialization. */
     private void Start()
     {
+        if (!visualObjectPrefab) { Debug.LogWarning("Missing Visual Object Prefab!"); }
+
         audioSource = GetComponent<AudioSource>();
         samples = new float[SampleSize];
         spectrum = new float[SampleSize];
         sampleRate = AudioSettings.outputSampleRate;
 
         // Camera position adjusts with the number of objects.
-        Camera.main.transform.position = new Vector3(numOfVisualObjects / 2, 0, (-numOfVisualObjects / 2) - 1);
+        //Camera.main.transform.position = new Vector3(numOfVisualObjects / 2, 0, (-numOfVisualObjects / 2) - 1);
 
-        SpawnLine();
+        //SpawnLine();
+        SpawnCircle();
     }
 
     /* Update is called once per frame. */
@@ -56,6 +65,26 @@ public class AudioVisualiser : MonoBehaviour
             GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Cube) as GameObject;
             visualObjects[i] = obj.transform;
             visualObjects[i].position = Vector3.right * i;
+        }
+    }
+
+    /* Spawns a circle of visual objects to display the audio. */
+    private void SpawnCircle()
+    {
+        visualObjects = new Transform[numOfVisualObjects];
+        visualScale = new float[numOfVisualObjects];
+
+        // Spawn the circle.
+        for (int i = 0; i < numOfVisualObjects; ++i)
+        {
+            float angle = i * ((Mathf.PI * 2) / numOfVisualObjects);
+            Vector3 pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * circleRadius;
+
+            if (visualObjectPrefab)
+            {
+                GameObject obj = Instantiate(visualObjectPrefab, pos, Quaternion.identity);
+                visualObjects[i] = obj.transform;
+            }
         }
     }
 
@@ -112,7 +141,9 @@ public class AudioVisualiser : MonoBehaviour
             if (visualScale[visualIndex] > maxVisualScale)
                 visualScale[visualIndex] = maxVisualScale;
 
+            // Apply the new scale and adjust the object position so it appears to scale in one direction.
             visualObjects[visualIndex].localScale = Vector3.one + (Vector3.up * visualScale[visualIndex]);
+            visualObjects[visualIndex].GetComponentInChildren<Renderer>().material.color = Color.Lerp(lowDBColor, highDBColor, (visualObjects[visualIndex].localScale.y / maxVisualScale));
             visualIndex++;
         }
     }
