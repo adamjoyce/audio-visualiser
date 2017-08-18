@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
 public class AudioVisualiser : MonoBehaviour
 {
     public GameObject visualObjectPrefab;       // The object used to represent the audio.
@@ -44,6 +45,9 @@ public class AudioVisualiser : MonoBehaviour
 
         //SpawnLine();
         SpawnCircle();
+
+        // Hide the cursor.
+        Cursor.visible = false;
     }
 
     /* Update is called once per frame. */
